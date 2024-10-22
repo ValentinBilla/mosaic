@@ -3,16 +3,23 @@ import requests
 import sqlite3
 import os
 
+def get_themes():
+    themes=[
+        "Flowers",
+        "Cash money",
+        "Ocean pollution",
+        "Plastic",
+        "Love",
+        "Feu"
+    ]
+    return themes
 
-def scrape_image_urls(url):
+def scrape_image_urls(url, query, page=1):
     api_key = os.getenv('PEXELS_API_KEY')
     params = {
-        # 'query': 'flowers',
-        'query': 'Ocean',
-        # 'color': '#3f53eb',
-        # 'orientation': 'landscape',
-        'per_page': 10,
-        'page': 7
+        'query': query,
+        'per_page': 80,
+        'page': page
     }
 
     headers = {
@@ -23,7 +30,6 @@ def scrape_image_urls(url):
 
     if response.status_code == 200:
         data = response.json()
-        # images = BeautifulSoup(response.content, 'html.parser').find_all("photos")
         images=data["photos"]
         theme=params["query"]
         if images :
@@ -55,10 +61,26 @@ def save_to_database(images_data):
 
 def main():
     target_url = 'https://api.pexels.com/v1/search'
-    image_urls = scrape_image_urls(target_url)
-    save_to_database(image_urls)
+    themes=get_themes()
+    total_images=0
+
+    for i, theme in enumerate(themes):
+        current_page=1
+        total_img=0
+        while True :
+            image_urls = scrape_image_urls(target_url, theme, current_page)
+            if image_urls:
+                save_to_database(image_urls)
+                total_img+=len(image_urls)
+                total_images+=len(image_urls)
+                if total_img>=250:
+                    break
+                current_page+=1
+            else:
+                break
+                
     
-    print(f"Scrapé {len(image_urls)} URLs d'images")
+    print(f"Scrapé {total_images} URLs d'images")
     print(f"URLs sauvegardées dans {os.path.abspath('images.db')}")
 
 if __name__ == "__main__":
