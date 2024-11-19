@@ -3,14 +3,16 @@ import requests
 import sqlite3
 import os
 
+
 def get_themes():
     themes=[
-        "Flowers",
-        "Cash money",
-        "Ocean pollution",
-        "Plastic",
-        "Love",
-        "Feu"
+        "Nature",
+        "Drug abuse",
+        "Addiction",
+        "Kiss",
+        "Poverty",
+        "Corporate",
+        "Hunger"
     ]
     return themes
 
