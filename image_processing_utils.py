@@ -1,9 +1,11 @@
 import glob
 import os
+import re
 import sqlite3
 
 import numpy as np
 import tqdm
+from PIL import ImageOps, Image
 from matplotlib import pyplot as plt
 
 import skimage
@@ -30,13 +32,26 @@ def rename_files_from_db(theme: str):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
+    files = os.listdir('downloads')
+    pattern = re.compile(r'^\d+\.jpg$')
+    matching_files = [f for f in files if pattern.match(f)]
+    ids = [int(f.split('.')[0]) for f in matching_files]
+    min_id = max(ids) if ids else 0
+
     rs = cursor.execute(f"SELECT url FROM image_data WHERE theme LIKE '{theme}' ORDER BY url")
-    mapping = {url: i for i, (url,) in enumerate(rs.fetchall())}
+    mapping = {url: min_id + i for i, (url,) in enumerate(rs.fetchall())}
 
     for url in mapping.keys():
         filename = url.split('/')[-1]
         os.rename(os.path.join('downloads', filename), 'downloads/' + str(mapping[url]) + '.jpg')
 
+def create_cropped_images():
+    for filename in tqdm.tqdm(os.listdir('downloads')):
+        if not filename.endswith('.jpg'):
+            continue
+
+        with Image.open(os.path.join('downloads', filename)) as im:
+            ImageOps.fit(im, (960, 540)).save(os.path.join('cropped', filename))
 
 def get_colors_from_db(theme: str) -> np.ndarray:
     db_path = 'images.db'
@@ -140,8 +155,9 @@ def generate_quantized_image(name: str, palette: np.ndarray):
 
 
 def main():
-    random = get_colors_from_db('Ocean')
+    random = get_colors_from_db('Ocean pollution')
     generate_quantized_image('turtle', random)
 
 if __name__ == '__main__':
-    main()
+    create_cropped_images()
+    # main()
